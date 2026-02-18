@@ -1,0 +1,46 @@
+name: Reusable Python Setup
+
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        description: 'Python version to install'
+        required: false
+        type: string
+        default: '3.12'
+      requirements-file:
+        description: 'Path to requirements.txt (empty to skip pip install)'
+        required: false
+        type: string
+        default: 'requirements.txt'
+      pip-packages:
+        description: 'Space-separated pip packages to install (used if no requirements file)'
+        required: false
+        type: string
+        default: ''
+      runner:
+        description: 'Runner label(s) as JSON array'
+        required: false
+        type: string
+        default: '["self-hosted", "linux", "x64"]'
+
+jobs:
+  setup:
+    runs-on: ${{ fromJSON(inputs.runner) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python ${{ inputs.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
+          cache: 'pip'
+
+      - name: Install dependencies (requirements file)
+        if: inputs.requirements-file != '' && hashFiles(inputs.requirements-file) != ''
+        run: pip install -r ${{ inputs.requirements-file }}
+
+      - name: Install dependencies (inline packages)
+        if: inputs.pip-packages != ''
+        run: pip install ${{ inputs.pip-packages }}

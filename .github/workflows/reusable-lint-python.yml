@@ -1,0 +1,52 @@
+name: Reusable Python Lint
+
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        description: 'Python version to install'
+        required: false
+        type: string
+        default: '3.12'
+      source-dir:
+        description: 'Directory to lint'
+        required: false
+        type: string
+        default: '.'
+      runner:
+        description: 'Runner label(s) as JSON array'
+        required: false
+        type: string
+        default: '["self-hosted", "linux", "x64"]'
+
+jobs:
+  lint:
+    runs-on: ${{ fromJSON(inputs.runner) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python ${{ inputs.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
+
+      - name: Install linting tools
+        run: pip install flake8 black isort
+
+      - name: Run flake8
+        run: |
+          flake8 ${{ inputs.source-dir }} \
+            --max-line-length=120 \
+            --extend-ignore=E203,W503 \
+            --exclude=.git,__pycache__,venv,.venv,node_modules
+
+      - name: Check black formatting
+        run: |
+          black --check --line-length=120 ${{ inputs.source-dir }} \
+            --exclude="/(\.git|__pycache__|venv|\.venv|node_modules)/"
+
+      - name: Check import sorting
+        run: |
+          isort --check-only --profile black --line-length=120 ${{ inputs.source-dir }} \
+            --skip-glob="**/venv/**" --skip-glob="**/node_modules/**"

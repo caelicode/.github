@@ -1,0 +1,45 @@
+name: Reusable Failure Notification
+
+on:
+  workflow_call:
+    inputs:
+      workflow-name:
+        description: 'Name of the workflow that failed'
+        required: true
+        type: string
+      repository:
+        description: 'Repository name (owner/repo)'
+        required: true
+        type: string
+      run-url:
+        description: 'URL to the failed workflow run'
+        required: true
+        type: string
+    secrets:
+      SMTP_USERNAME:
+        required: true
+      SMTP_PASSWORD:
+        required: true
+      NOTIFY_EMAIL:
+        required: true
+
+jobs:
+  notify:
+    runs-on: [self-hosted, linux, x64]
+    steps:
+      - name: Send failure notification
+        uses: caelicode/send-email@main
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          from: ${{ secrets.SMTP_USERNAME }}
+          to: ${{ secrets.NOTIFY_EMAIL }}
+          subject: "Workflow Failed: ${{ inputs.workflow-name }} in ${{ inputs.repository }}"
+          html: |
+            <h2>Workflow Failure Alert</h2>
+            <p><strong>Workflow:</strong> ${{ inputs.workflow-name }}</p>
+            <p><strong>Repository:</strong> ${{ inputs.repository }}</p>
+            <p><strong>Run URL:</strong> <a href="${{ inputs.run-url }}">${{ inputs.run-url }}</a></p>
+            <p>Please investigate and resolve the issue.</p>
