@@ -4,27 +4,64 @@ Organization-level GitHub configuration and reusable workflows for [caelicode](h
 
 ## Reusable Workflows
 
-| Workflow | Purpose | Used By |
-|----------|---------|---------|
-| `reusable-python-setup.yml` | Checkout + Python + pip install | github-user-management, status-page, secret-scanner |
-| `reusable-lint-python.yml` | flake8 + black + isort | Python repos (PR quality gate) |
-| `reusable-lint-node.yml` | ESLint + npm test | Node.js repos (PR quality gate) |
-| `reusable-notify-on-failure.yml` | Email notification via send-email action | All repos (on workflow failure) |
-| `reusable-secret-rotation-reminder.yml` | Monthly issue for secret rotation | This repo (scheduled) |
+| Workflow | Purpose |
+|----------|---------|
+| `reusable-python-ci.yml` | Lint + test + coverage with matrix Python versions |
+| `reusable-deploy-ssh.yml` | SSH deployment with retry, health checks, rollback |
+| `reusable-docker-build.yml` | Docker build + push with Buildx caching and multi-platform |
+| `reusable-lint-python.yml` | flake8 + black + isort (legacy) |
+| `reusable-python-setup.yml` | Checkout + Python + pip install |
+| `reusable-lint-node.yml` | ESLint + npm test |
+| `reusable-notify-on-failure.yml` | Email notification via send-email action |
+| `reusable-secret-rotation-reminder.yml` | Monthly issue for secret rotation |
 
 ## Usage
 
-Call any reusable workflow from another repo:
+### Python CI (lint + test + coverage)
 
 ```yaml
 jobs:
-  lint:
-    uses: caelicode/.github/.github/workflows/reusable-lint-python.yml@main
+  ci:
+    uses: caelicode/.github/.github/workflows/reusable-python-ci.yml@main
     with:
-      python-version: '3.12'
-      source-dir: 'scripts/'
+      python-versions: '["3.10", "3.12", "3.13"]'
+      linter: ruff
+      source-dir: src
+      install-project: true
+      coverage-threshold: 80
+```
+
+### SSH Deployment
+
+```yaml
+jobs:
+  deploy:
+    uses: caelicode/.github/.github/workflows/reusable-deploy-ssh.yml@main
+    with:
+      deploy-script: |
+        cd /home/app/myproject
+        git pull origin main
+        npm install --production
+        pm2 restart myapp
+      health-check-url: https://myapp.example.com/health
+    secrets:
+      ssh-host: ${{ secrets.SERVER_HOST }}
+      ssh-username: ${{ secrets.SERVER_USER }}
+      ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
+```
+
+### Docker Build
+
+```yaml
+jobs:
+  build:
+    uses: caelicode/.github/.github/workflows/reusable-docker-build.yml@main
+    with:
+      image-name: myapp
+      platforms: linux/amd64,linux/arm64
+      tag-strategy: sha
 ```
 
 ## Secret Rotation
 
-The `reusable-secret-rotation-reminder.yml` workflow runs on the 1st and 15th of each month, creating a GitHub issue that lists all org secrets needing rotation. See the [runner-infrastructure RUNBOOK](https://github.com/caelicode/runner-infrastructure/blob/main/RUNBOOK.md) for detailed rotation procedures.
+The `reusable-secret-rotation-reminder.yml` workflow runs on the 1st and 15th of each month, creating a GitHub issue that lists all org secrets needing rotation.

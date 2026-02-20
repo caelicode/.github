@@ -1,0 +1,64 @@
+name: Reusable Python CI
+
+on:
+  workflow_call:
+    inputs:
+      python-versions:
+        description: 'Python versions as JSON array (e.g., ["3.10", "3.12"])'
+        required: false
+        type: string
+        default: '["3.12"]'
+      linter:
+        description: 'Linter to use: ruff or flake8'
+        required: false
+        type: string
+        default: 'ruff'
+      source-dir:
+        description: 'Directory to lint'
+        required: false
+        type: string
+        default: '.'
+      test-command:
+        description: 'Test command'
+        required: false
+        type: string
+        default: 'pytest'
+      test-args:
+        description: 'Additional test arguments'
+        required: false
+        type: string
+        default: '--tb=short -q'
+      coverage-threshold:
+        description: 'Minimum coverage percentage (0 to disable)'
+        required: false
+        type: number
+        default: 0
+      install-project:
+        description: 'Run pip install -e .[dev]'
+        required: false
+        type: boolean
+        default: false
+      runner:
+        description: 'Runner label(s) as JSON array'
+        required: false
+        type: string
+        default: '["ubuntu-latest"]'
+
+jobs:
+  ci:
+    runs-on: ${{ fromJSON(inputs.runner) }}
+    strategy:
+      matrix:
+        python-version: ${{ fromJSON(inputs.python-versions) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: bertrandmbanwi/github-actions/python-ci@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+          linter: ${{ inputs.linter }}
+          source-dir: ${{ inputs.source-dir }}
+          test-command: ${{ inputs.test-command }}
+          test-args: ${{ inputs.test-args }}
+          coverage-threshold: ${{ inputs.coverage-threshold }}
+          install-project: ${{ inputs.install-project }}

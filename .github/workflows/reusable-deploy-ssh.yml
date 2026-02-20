@@ -1,0 +1,61 @@
+name: Reusable SSH Deploy
+
+on:
+  workflow_call:
+    inputs:
+      deploy-script:
+        description: 'Shell script to execute on the remote server'
+        required: true
+        type: string
+      health-check-url:
+        description: 'HTTP endpoint to validate after deployment'
+        required: false
+        type: string
+        default: ''
+      retry-max-attempts:
+        description: 'Maximum SSH retry attempts'
+        required: false
+        type: number
+        default: 3
+      health-check-retries:
+        description: 'Health check retry attempts'
+        required: false
+        type: number
+        default: 5
+      runner:
+        description: 'Runner label(s) as JSON array'
+        required: false
+        type: string
+        default: '["self-hosted", "linux", "x64"]'
+    secrets:
+      ssh-host:
+        description: 'SSH host address'
+        required: true
+      ssh-username:
+        description: 'SSH username'
+        required: true
+      ssh-key:
+        description: 'SSH private key'
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ${{ fromJSON(inputs.runner) }}
+    steps:
+      - uses: bertrandmbanwi/github-actions/ssh-deploy@v1
+        id: deploy
+        with:
+          host: ${{ secrets.ssh-host }}
+          username: ${{ secrets.ssh-username }}
+          key: ${{ secrets.ssh-key }}
+          deploy-script: ${{ inputs.deploy-script }}
+          health-check-url: ${{ inputs.health-check-url }}
+          retry-max-attempts: ${{ inputs.retry-max-attempts }}
+          health-check-retries: ${{ inputs.health-check-retries }}
+
+      - name: Report result
+        if: always()
+        run: |
+          echo "Status: ${{ steps.deploy.outputs.deployment-status }}"
+          echo "Duration: ${{ steps.deploy.outputs.duration-seconds }}s"
+          echo "Health: ${{ steps.deploy.outputs.health-check-status }}"
