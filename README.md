@@ -11,7 +11,8 @@ Organization-level GitHub configuration and reusable workflows for [caelicode](h
 | `reusable-docker-build.yml` | Docker build + push with Buildx caching and multi-platform |
 | `reusable-lint-python.yml` | flake8 + black + isort (legacy) |
 | `reusable-python-setup.yml` | Checkout + Python + pip install |
-| `reusable-lint-node.yml` | ESLint + npm test |
+| `reusable-node-ci.yml` | Lint + test + coverage with matrix Node.js versions |
+| `reusable-lint-node.yml` | ESLint + npm test (legacy) |
 | `reusable-notify-on-failure.yml` | Email notification via send-email action |
 | `reusable-secret-rotation-reminder.yml` | Monthly issue for secret rotation |
 
@@ -29,6 +30,19 @@ jobs:
       source-dir: src
       install-project: true
       coverage-threshold: 80
+```
+
+### Node.js CI (lint + test + coverage)
+
+```yaml
+jobs:
+  ci:
+    uses: caelicode/.github/.github/workflows/reusable-node-ci.yml@main
+    with:
+      node-versions: '["18", "20", "22"]'
+      test-command: npm test
+      coverage-command: npx jest --coverage --coverageReporters=json-summary
+      coverage-threshold: 60
 ```
 
 ### SSH Deployment

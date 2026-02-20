@@ -1,0 +1,97 @@
+name: Reusable Node.js CI
+
+on:
+  workflow_call:
+    inputs:
+      node-versions:
+        description: 'Node.js versions as JSON array (e.g., ["18", "20", "22"])'
+        required: false
+        type: string
+        default: '["20"]'
+      linter:
+        description: 'Lint command (empty to skip)'
+        required: false
+        type: string
+        default: 'npm run lint --if-present'
+      test-command:
+        description: 'Test command'
+        required: false
+        type: string
+        default: 'npm test'
+      coverage-command:
+        description: 'Coverage command (empty to skip)'
+        required: false
+        type: string
+        default: ''
+      coverage-threshold:
+        description: 'Minimum coverage percentage (0 to disable)'
+        required: false
+        type: number
+        default: 0
+      install-command:
+        description: 'Dependency install command'
+        required: false
+        type: string
+        default: 'npm ci'
+      working-directory:
+        description: 'Working directory for all commands'
+        required: false
+        type: string
+        default: '.'
+      runner:
+        description: 'Runner label(s) as JSON array'
+        required: false
+        type: string
+        default: '["ubuntu-latest"]'
+
+jobs:
+  ci:
+    runs-on: ${{ fromJSON(inputs.runner) }}
+    strategy:
+      matrix:
+        node-version: ${{ fromJSON(inputs.node-versions) }}
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: ${{ inputs.working-directory }}/package-lock.json
+
+      - name: Install dependencies
+        run: ${{ inputs.install-command }}
+
+      - name: Lint
+        if: inputs.linter != ''
+        run: ${{ inputs.linter }}
+
+      - name: Run tests
+        if: inputs.test-command != ''
+        run: ${{ inputs.test-command }}
+
+      - name: Run coverage
+        if: inputs.coverage-command != ''
+        run: ${{ inputs.coverage-command }}
+
+      - name: Check coverage threshold
+        if: inputs.coverage-threshold > 0 && inputs.coverage-command != ''
+        run: |
+          THRESHOLD=${{ inputs.coverage-threshold }}
+          if [ -f coverage/coverage-summary.json ]; then
+            ACTUAL=$(node -e "
+              const c = require('./coverage/coverage-summary.json');
+              console.log(Math.floor(c.total.lines.pct));
+            ")
+            echo "Coverage: ${ACTUAL}% (threshold: ${THRESHOLD}%)"
+            if [ "$ACTUAL" -lt "$THRESHOLD" ]; then
+              echo "::error::Coverage ${ACTUAL}% is below threshold ${THRESHOLD}%"
+              exit 1
+            fi
+          else
+            echo "::warning::No coverage-summary.json found — skipping threshold check"
+          fi
