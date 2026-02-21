@@ -263,8 +263,16 @@ jobs:
 
       - name: Run Gitleaks
         run: |
+          # Use repo-local .gitleaks.toml if it exists (for allowlists)
+          CONFIG_FLAG=""
+          if [ -f ".gitleaks.toml" ]; then
+            CONFIG_FLAG="--config .gitleaks.toml"
+            echo "Using repo-local .gitleaks.toml"
+          fi
+
           gitleaks detect \
             --source . \
+            $CONFIG_FLAG \
             --report-format sarif \
             --report-path gitleaks-results.sarif \
             --exit-code 0 \
