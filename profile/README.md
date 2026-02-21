@@ -15,6 +15,7 @@ We build cloud infrastructure, automate operations, and solve security problems 
 | **[status-page](https://github.com/caelicode/status-page)** | Automated service monitoring and status page powered by Grafana Cloud, GitHub Actions, and GitHub Pages. Zero hosting cost. |
 | **[send-email](https://github.com/caelicode/send-email)** | Lightweight GitHub Action for sending email notifications from workflows. |
 | **[incidentplaybook.dev](https://github.com/caelicode/incidentplaybook.dev)** | Production incident response playbooks, severity frameworks, and escalation templates. |
+| **[wsl](https://github.com/caelicode/wsl)** | Enterprise WSL2 distro builder with profile-based builds (SRE, Dev, Data), pinned versions, dynamic DNS, and in-place updates. |
 
 We also maintain shared CI/CD workflows, linting pipelines, and secret rotation automation across the org - all in this `.github` repo.
 
