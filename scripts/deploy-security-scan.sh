@@ -113,8 +113,9 @@ deploy_to_repo() {
   tmpdir=$(mktemp -d)
   trap "rm -rf $tmpdir" RETURN
 
-  # Clone (shallow)
-  if ! gh repo clone "$ORG/$repo" "$tmpdir/$repo" -- --depth 1 -q 2>/dev/null; then
+  # Clone (shallow) using token from GH_TOKEN env var
+  local clone_url="https://x-access-token:${GH_TOKEN}@github.com/$ORG/$repo.git"
+  if ! git clone --depth 1 -q "$clone_url" "$tmpdir/$repo" 2>/dev/null; then
     echo "   [skip] Failed to clone $repo"
     return
   fi
