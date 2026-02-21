@@ -1,0 +1,267 @@
+# CaeliCode — Reusable Security Scan
+# Org-wide SAST, dependency review, and secret detection on every PR.
+#
+# Caller usage:
+#   jobs:
+#     security:
+#       uses: caelicode/.github/.github/workflows/reusable-security-scan.yml@main
+#       with:
+#         languages: '["python"]'
+#       permissions:
+#         actions: read
+#         contents: read
+#         security-events: write
+
+name: Reusable Security Scan
+
+on:
+  workflow_call:
+    inputs:
+      languages:
+        description: >
+          CodeQL languages as JSON array.
+          Supported: javascript, typescript, python, go, ruby, java, csharp, cpp, swift.
+          Set to "[]" to skip CodeQL entirely (e.g. for shell-only repos).
+        required: false
+        type: string
+        default: '["auto"]'
+      semgrep-rules:
+        description: >
+          Semgrep ruleset(s), space-separated.
+          Default uses the recommended auto config.
+        required: false
+        type: string
+        default: 'auto'
+      enable-codeql:
+        description: 'Enable CodeQL SAST analysis'
+        required: false
+        type: boolean
+        default: true
+      enable-semgrep:
+        description: 'Enable Semgrep SAST analysis'
+        required: false
+        type: boolean
+        default: true
+      enable-dependency-review:
+        description: 'Enable dependency review (PR only)'
+        required: false
+        type: boolean
+        default: true
+      enable-secret-scan:
+        description: 'Enable Gitleaks secret scanning'
+        required: false
+        type: boolean
+        default: true
+      runner:
+        description: 'Runner label(s) as JSON array'
+        required: false
+        type: string
+        default: '["ubuntu-24.04"]'
+      fail-on-findings:
+        description: 'Fail the workflow if any scanner finds issues'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  # ── CodeQL — GitHub-native SAST ─────────────────────────────────
+  codeql:
+    name: CodeQL
+    if: ${{ inputs.enable-codeql && inputs.languages != '["auto"]' && inputs.languages != '[]' }}
+    runs-on: ${{ fromJSON(inputs.runner) }}
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ${{ fromJSON(inputs.languages) }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-extended
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Run CodeQL analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
+
+  # ── CodeQL auto-detect mode ─────────────────────────────────────
+  codeql-auto:
+    name: CodeQL (auto-detect)
+    if: ${{ inputs.enable-codeql && inputs.languages == '["auto"]' }}
+    runs-on: ${{ fromJSON(inputs.runner) }}
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect languages
+        id: detect
+        run: |
+          LANGS="[]"
+
+          # Check for common language files
+          if find . -name '*.py' -not -path '*/node_modules/*' -not -path '*/.venv/*' | head -1 | grep -q .; then
+            LANGS=$(echo "$LANGS" | jq '. + ["python"]')
+          fi
+          if find . -name '*.js' -o -name '*.ts' -o -name '*.jsx' -o -name '*.tsx' | grep -v node_modules | head -1 | grep -q .; then
+            LANGS=$(echo "$LANGS" | jq '. + ["javascript-typescript"]')
+          fi
+          if find . -name '*.go' -not -path '*/vendor/*' | head -1 | grep -q .; then
+            LANGS=$(echo "$LANGS" | jq '. + ["go"]')
+          fi
+          if find . -name '*.java' -o -name '*.kt' | head -1 | grep -q .; then
+            LANGS=$(echo "$LANGS" | jq '. + ["java-kotlin"]')
+          fi
+          if find . -name '*.rb' | head -1 | grep -q .; then
+            LANGS=$(echo "$LANGS" | jq '. + ["ruby"]')
+          fi
+          if find . -name '*.cs' | head -1 | grep -q .; then
+            LANGS=$(echo "$LANGS" | jq '. + ["csharp"]')
+          fi
+
+          echo "languages=$LANGS" >> "$GITHUB_OUTPUT"
+          echo "count=$(echo "$LANGS" | jq length)" >> "$GITHUB_OUTPUT"
+          echo "Detected languages: $LANGS"
+
+      - name: Initialize CodeQL
+        if: steps.detect.outputs.count != '0'
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ join(fromJSON(steps.detect.outputs.languages), ',') }}
+          queries: security-extended
+
+      - name: Autobuild
+        if: steps.detect.outputs.count != '0'
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Run CodeQL analysis
+        if: steps.detect.outputs.count != '0'
+        uses: github/codeql-action/analyze@v3
+
+      - name: Skip notice
+        if: steps.detect.outputs.count == '0'
+        run: echo "::notice::No CodeQL-supported languages detected in this repository."
+
+  # ── Semgrep — lightweight SAST ──────────────────────────────────
+  semgrep:
+    name: Semgrep
+    if: ${{ inputs.enable-semgrep }}
+    runs-on: ${{ fromJSON(inputs.runner) }}
+    permissions:
+      contents: read
+      security-events: write
+
+    container:
+      image: semgrep/semgrep
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Semgrep
+        run: |
+          semgrep scan \
+            --config "${{ inputs.semgrep-rules }}" \
+            --sarif \
+            --output semgrep-results.sarif \
+            --error \
+            2>&1 || SEMGREP_EXIT=$?
+
+          echo "semgrep_exit=${SEMGREP_EXIT:-0}" >> "$GITHUB_ENV"
+
+          # Always upload results even if findings exist
+          if [ ! -f semgrep-results.sarif ]; then
+            echo '{"version":"2.1.0","$schema":"https://json.schemastore.org/sarif-2.1.0.json","runs":[]}' > semgrep-results.sarif
+          fi
+
+      - name: Upload Semgrep SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: semgrep-results.sarif
+          category: semgrep
+
+      - name: Check for failures
+        if: ${{ inputs.fail-on-findings && env.semgrep_exit != '0' }}
+        run: |
+          echo "::error::Semgrep found security issues. Review the Security tab for details."
+          exit 1
+
+  # ── Dependency Review — supply chain (PR only) ──────────────────
+  dependency-review:
+    name: Dependency Review
+    if: ${{ inputs.enable-dependency-review && github.event_name == 'pull_request' }}
+    runs-on: ${{ fromJSON(inputs.runner) }}
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          comment-summary-in-pr: always
+          deny-licenses: GPL-3.0, AGPL-3.0
+
+  # ── Gitleaks — secret detection ─────────────────────────────────
+  gitleaks:
+    name: Secret Scan
+    if: ${{ inputs.enable-secret-scan }}
+    runs-on: ${{ fromJSON(inputs.runner) }}
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITLEAKS_LICENSE: ""  # OSS mode
+        continue-on-error: ${{ !inputs.fail-on-findings }}
+
+  # ── Summary ─────────────────────────────────────────────────────
+  summary:
+    name: Security Summary
+    needs: [codeql, codeql-auto, semgrep, dependency-review, gitleaks]
+    if: always()
+    runs-on: ${{ fromJSON(inputs.runner) }}
+
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## Security Scan Results" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Scanner | Status |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---------|--------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| CodeQL | ${{ needs.codeql.result == 'skipped' && needs.codeql-auto.result || needs.codeql.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Semgrep | ${{ needs.semgrep.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Dependency Review | ${{ needs.dependency-review.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Secret Scan | ${{ needs.gitleaks.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "View detailed findings in the **Security** tab of this repository." >> "$GITHUB_STEP_SUMMARY"
