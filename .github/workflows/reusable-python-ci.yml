@@ -51,9 +51,9 @@ jobs:
       matrix:
         python-version: ${{ fromJSON(inputs.python-versions) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
-      - uses: bertrandmbanwi/github-actions/python-ci@v1
+      - uses: bertrandmbanwi/github-actions/python-ci@d3ee46d8e5c71c40b74febadf6ca8e40be31113c # v1
         with:
           python-version: ${{ matrix.python-version }}
           linter: ${{ inputs.linter }}
