@@ -53,7 +53,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
-      - uses: bertrandmbanwi/github-actions/python-ci@v1
+      - uses: bertrandmbanwi/github-actions/python-ci@d3ee46d8e5c71c40b74febadf6ca8e40be31113c # v1
         with:
           python-version: ${{ matrix.python-version }}
           linter: ${{ inputs.linter }}

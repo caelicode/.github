@@ -42,7 +42,7 @@ jobs:
   deploy:
     runs-on: ${{ fromJSON(inputs.runner) }}
     steps:
-      - uses: bertrandmbanwi/github-actions/ssh-deploy@v1
+      - uses: bertrandmbanwi/github-actions/ssh-deploy@d3ee46d8e5c71c40b74febadf6ca8e40be31113c # v1
         id: deploy
         with:
           host: ${{ secrets.ssh-host }}
