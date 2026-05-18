@@ -47,6 +47,11 @@ on:
         required: false
         type: boolean
         default: true
+      enable-private-dependency-review:
+        description: 'Enable dependency review on private repositories with GitHub Advanced Security'
+        required: false
+        type: boolean
+        default: false
       enable-secret-scan:
         description: 'Enable Gitleaks secret scanning'
         required: false
@@ -224,7 +229,7 @@ jobs:
   # ── Dependency Review — supply chain (PR only) ──────────────────
   dependency-review:
     name: Dependency Review
-    if: ${{ inputs.enable-dependency-review && github.event_name == 'pull_request' }}
+    if: ${{ inputs.enable-dependency-review && github.event_name == 'pull_request' && (!github.event.repository.private || inputs.enable-private-dependency-review) }}
     runs-on: ${{ fromJSON(inputs.runner) }}
     permissions:
       contents: read
