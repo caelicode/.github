@@ -42,7 +42,7 @@ on:
         description: 'Runner label(s) as JSON array'
         required: false
         type: string
-        default: '["ubuntu-latest"]'
+        default: '["self-hosted", "linux", "arm64"]'
 
 jobs:
   ci:

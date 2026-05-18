@@ -25,7 +25,7 @@ on:
 
 jobs:
   notify:
-    runs-on: [self-hosted, linux, x64]
+    runs-on: [self-hosted, linux, arm64]
     steps:
       - name: Send failure notification
         uses: caelicode/send-email@main
