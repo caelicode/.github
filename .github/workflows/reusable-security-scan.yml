@@ -72,7 +72,8 @@ jobs:
   # ── CodeQL — GitHub-native SAST ─────────────────────────────────
   codeql:
     name: CodeQL
-    if: ${{ inputs.enable-codeql && inputs.languages != '["auto"]' && inputs.languages != '[]' }}
+    # CodeQL's current Linux bundle supports x86-64, but not Linux arm64.
+    if: ${{ inputs.enable-codeql && !contains(inputs.runner, 'arm64') && inputs.languages != '["auto"]' && inputs.languages != '[]' }}
     runs-on: ${{ fromJSON(inputs.runner) }}
     permissions:
       actions: read
@@ -106,7 +107,8 @@ jobs:
   # ── CodeQL auto-detect mode ─────────────────────────────────────
   codeql-auto:
     name: CodeQL (auto-detect)
-    if: ${{ inputs.enable-codeql && inputs.languages == '["auto"]' }}
+    # CodeQL's current Linux bundle supports x86-64, but not Linux arm64.
+    if: ${{ inputs.enable-codeql && !contains(inputs.runner, 'arm64') && inputs.languages == '["auto"]' }}
     runs-on: ${{ fromJSON(inputs.runner) }}
     permissions:
       actions: read
@@ -264,8 +266,17 @@ jobs:
       - name: Install Gitleaks
         run: |
           GITLEAKS_VERSION="8.24.0"
-          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
-            | tar -xz -C /usr/local/bin gitleaks
+          case "$(uname -m)" in
+            x86_64|amd64) GITLEAKS_ARCH="x64" ;;
+            aarch64|arm64) GITLEAKS_ARCH="arm64" ;;
+            *)
+              echo "::error::Unsupported architecture for Gitleaks: $(uname -m)"
+              exit 1
+              ;;
+          esac
+
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_${GITLEAKS_ARCH}.tar.gz" \
+            | sudo tar -xz -C /usr/local/bin gitleaks
 
       - name: Run Gitleaks
         run: |
