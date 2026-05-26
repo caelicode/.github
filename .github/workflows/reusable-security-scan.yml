@@ -72,6 +72,9 @@ on:
         required: false
         type: boolean
         default: false
+    secrets:
+      ORG_MANAGER_PRIVATE_KEY:
+        required: false
 
 jobs:
   # ── CodeQL — GitHub-native SAST ─────────────────────────────────
@@ -91,8 +94,19 @@ jobs:
         language: ${{ fromJSON(inputs.languages) }}
 
     steps:
+      - name: Generate checkout token
+        id: checkout-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.ORG_MANAGER_CLIENT_ID || 'Iv23lieRNVjm529IHSRr' }}
+          private-key: ${{ secrets.ORG_MANAGER_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          token: ${{ steps.checkout-token.outputs.token }}
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@89a39a4e59826350b863aa6b6252a07ad50cf83e # v4
@@ -121,8 +135,19 @@ jobs:
       security-events: write
 
     steps:
+      - name: Generate checkout token
+        id: checkout-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.ORG_MANAGER_CLIENT_ID || 'Iv23lieRNVjm529IHSRr' }}
+          private-key: ${{ secrets.ORG_MANAGER_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          token: ${{ steps.checkout-token.outputs.token }}
 
       - name: Detect languages
         id: detect
@@ -183,8 +208,19 @@ jobs:
       security-events: write
 
     steps:
+      - name: Generate checkout token
+        id: checkout-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.ORG_MANAGER_CLIENT_ID || 'Iv23lieRNVjm529IHSRr' }}
+          private-key: ${{ secrets.ORG_MANAGER_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          token: ${{ steps.checkout-token.outputs.token }}
 
       - name: Install Semgrep
         run: |
@@ -246,8 +282,19 @@ jobs:
       pull-requests: write
 
     steps:
+      - name: Generate checkout token
+        id: checkout-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.ORG_MANAGER_CLIENT_ID || 'Iv23lieRNVjm529IHSRr' }}
+          private-key: ${{ secrets.ORG_MANAGER_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          token: ${{ steps.checkout-token.outputs.token }}
 
       - name: Dependency Review
         uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
@@ -266,9 +313,19 @@ jobs:
       contents: read
 
     steps:
+      - name: Generate checkout token
+        id: checkout-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.ORG_MANAGER_CLIENT_ID || 'Iv23lieRNVjm529IHSRr' }}
+          private-key: ${{ secrets.ORG_MANAGER_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
+          token: ${{ steps.checkout-token.outputs.token }}
           fetch-depth: 0
 
       - name: Install Gitleaks

@@ -80,6 +80,7 @@ permissions:
 jobs:
   security:
     uses: caelicode/.github/.github/workflows/reusable-security-scan.yml@main
+    secrets: inherit
     with:
       languages: '${languages}'
       enable-codeql: ${enable_codeql}
