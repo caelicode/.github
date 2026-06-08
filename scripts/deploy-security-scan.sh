@@ -20,6 +20,7 @@ ORG="caelicode"
 BRANCH="add-security-scan"
 DRY_RUN=false
 SINGLE_REPO=""
+SECURITY_WORKFLOW_REF="${SECURITY_WORKFLOW_REF:-}"
 
 # Parse args
 for arg in "$@"; do
@@ -50,6 +51,7 @@ get_codeql_languages() {
 generate_caller() {
   local repo="$1"
   local languages="$2"
+  local workflow_ref="$3"
   local enable_codeql="true"
 
   if [ "$languages" = '[]' ]; then
@@ -79,7 +81,7 @@ permissions:
 
 jobs:
   security:
-    uses: caelicode/.github/.github/workflows/reusable-security-scan.yml@main
+    uses: caelicode/.github/.github/workflows/reusable-security-scan.yml@${workflow_ref} # main
     secrets: inherit
     with:
       languages: '${languages}'
@@ -104,7 +106,7 @@ deploy_to_repo() {
 
   if $DRY_RUN; then
     echo "   [dry-run] Would create .github/workflows/security.yml"
-    generate_caller "$repo" "$languages" | head -5
+    generate_caller "$repo" "$languages" "$SECURITY_WORKFLOW_REF" | head -5
     echo "   ..."
     return
   fi
@@ -140,7 +142,7 @@ deploy_to_repo() {
   mkdir -p .github/workflows
 
   # Generate and write the caller
-  generate_caller "$repo" "$languages" > .github/workflows/security.yml
+  generate_caller "$repo" "$languages" "$SECURITY_WORKFLOW_REF" > .github/workflows/security.yml
 
   # Commit directly to default branch
   git add .github/workflows/security.yml
@@ -158,6 +160,10 @@ caelicode/.github. Runs on every PR and weekly on schedule."
 # ── Main ─────────────────────────────────────────────────────────
 echo "CaeliCode Security Scan Deployment"
 echo "==================================="
+
+if [ -z "$SECURITY_WORKFLOW_REF" ]; then
+  SECURITY_WORKFLOW_REF=$(gh api "repos/$ORG/.github/commits/main" --jq '.sha')
+fi
 
 if $DRY_RUN; then
   echo "Mode: DRY RUN (no changes will be made)"
