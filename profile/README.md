@@ -1,24 +1,22 @@
-### Hey, we're CaeliCode Solutions
+### CaeliCode
 
-We build cloud infrastructure, automate operations, and solve security problems - mostly for small teams that need enterprise-grade tooling without the enterprise price tag.
+CaeliCode is an independent engineering portfolio and open-source workspace maintained by [Bertrand Mbanwi](https://github.com/bertrandmbanwi). It documents practical work across cloud platforms, DevOps/SRE, security automation, developer tooling, and software delivery.
 
-**What we do:** Cloud & DevOps consulting, platform engineering, cybersecurity, and software development.
-
-**How we work:** Everything is config-driven, version-controlled, and automated. If it can't run in a pipeline, we probably won't build it.
+The public repositories are intended to make implementation quality, operating decisions, documentation, and technical communication easy to inspect.
 
 ---
 
-#### Open-Source Tools
+#### Selected public engineering work
 
-| Repository | What it does |
+| Repository | What it demonstrates |
 |:--|:--|
-| **[status-page](https://github.com/caelicode/status-page)** | Automated service monitoring and status page powered by Grafana Cloud, GitHub Actions, and GitHub Pages. Zero hosting cost. |
-| **[send-email](https://github.com/caelicode/send-email)** | Lightweight GitHub Action for sending email notifications from workflows. |
-| **[incidentplaybook.dev](https://github.com/caelicode/incidentplaybook.dev)** | Production incident response playbooks, severity frameworks, and escalation templates. |
-| **[wsl](https://github.com/caelicode/wsl)** | Enterprise WSL2 distro builder with profile-based builds (SRE, Dev, Data), pinned versions, dynamic DNS, and in-place updates. |
-
-We also maintain shared CI/CD workflows, linting pipelines, and secret rotation automation across the org - all in this `.github` repo.
+| **[status-page](https://github.com/caelicode/status-page)** | Automated service monitoring and status publishing with Grafana Cloud, GitHub Actions, GitHub Pages, tests, and optional Statuspage integration. |
+| **[code-review-action](https://github.com/caelicode/code-review-action)** | A configurable GitHub Action for focused AI-assisted pull-request review and inline feedback. |
+| **[ssh-action](https://github.com/caelicode/ssh-action)** | Remote command automation using native OpenSSH, multi-host execution, bastion support, timeouts, and output capture. |
+| **[wsl](https://github.com/caelicode/wsl)** | A profile-driven WSL2 environment builder with pinned tools, verified updates, rollback, DNS handling, and SSH agent forwarding. |
+| **[send-email](https://github.com/caelicode/send-email)** | A lightweight GitHub Action for sending workflow notifications by email. |
+| **[.github](https://github.com/caelicode/.github)** | Reusable CI, deployment, container-build, notification, and secret-rotation workflows for the organization. |
 
 ---
 
-<sub>**caelicode.com** · Cloud Engineering & DevOps · Remote</sub>
+<sub>**[caelicode.com](https://caelicode.com)** - Independent engineering portfolio - United States</sub>
