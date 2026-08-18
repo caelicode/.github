@@ -1,8 +1,8 @@
-### CaeliCode
+### CaeliCode Solutions
 
-CaeliCode is an independent engineering portfolio and open-source workspace maintained by [Bertrand Mbanwi](https://github.com/bertrandmbanwi). It documents practical work across cloud platforms, DevOps/SRE, security automation, developer tooling, and software delivery.
+CaeliCode Solutions is an engineering workspace focused on cloud platforms, DevOps/SRE, security automation, developer tooling, and reliable software delivery.
 
-The public repositories are intended to make implementation quality, operating decisions, documentation, and technical communication easy to inspect.
+Public repositories provide selected tools, reusable workflows, working surfaces, and technical documentation for engineering review.
 
 ---
 
@@ -19,4 +19,4 @@ The public repositories are intended to make implementation quality, operating d
 
 ---
 
-<sub>**[caelicode.com](https://caelicode.com)** - Independent engineering portfolio - United States</sub>
+<sub>**[caelicode.com](https://caelicode.com)** · Cloud engineering · DevOps automation · Security tooling</sub>
