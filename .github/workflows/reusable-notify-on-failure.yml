@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Send failure notification
-        uses: caelicode/send-email@0f3ea9f5cce59683681cd3c0f3b9c15f72b56a2c # main
+        uses: caelicode/send-email@f09a118d4403fbcdfd7d5671c75dad730a5dddb4 # main
         with:
           server_address: smtp.gmail.com
           server_port: 587
